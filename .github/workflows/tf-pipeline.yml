@@ -8,35 +8,10 @@ env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   ECR_REPO: "repo" # Update this once we have ECR Repo
-  ECS_CLUSTER: "cluster" # Update this once we have ECS Cluster
-  ECS_SERVICE: "service" # Update this once we have ECS Service
 
 jobs:
-  terraform:
-    name: Terraform Plan/Apply
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-
-      - name: Terraform Init
-        run: terraform init
-        working-directory: ./terraform
-
-      - name: Terraform Plan
-        run: terraform plan -input=false
-        working-directory: ./terraform
-
-      - name: Terraform Apply
-        run: terraform apply -auto-approve
-        working-directory: ./terraform
-
   deploy-app:
     name: Build, Push & Deploy
-    needs: terraform
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -49,13 +24,5 @@ jobs:
 
       - name: Build and Push
         run: |
-          docker build -t ${{ env.ECR_REPO }}:latest .
+          docker build -t ${{ env.ECR_REPO }}:latest -f Dockerfile app/
           docker push ${{ env.ECR_REPO }}:latest
-
-      - name: Deploy to ECS
-        run: |
-          aws ecs update-service \
-            --cluster ${{ env.ECS_CLUSTER }} \
-            --service ${{ env.ECS_SERVICE }} \
-            --force-new-deployment \
-            --region ${{ env.AWS_REGION }}
