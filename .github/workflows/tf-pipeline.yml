@@ -5,24 +5,30 @@ on:
 
 env:
   AWS_REGION: eu-west-2
-  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   ECR_REPO: "repo" # Update this once we have ECR Repo
 
 jobs:
   deploy-app:
-    name: Build, Push & Deploy
+    name: Build & Push Docker Image
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Login to ECR
-        run: |
-          aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
-          docker login --username AWS --password-stdin ${{ env.ECR_REPO }}
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Build and Push
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker Image
         run: |
           docker build -t ${{ env.ECR_REPO }}:latest -f Dockerfile app/
+
+      - name: Push Docker Image to ECR
+        run: |
           docker push ${{ env.ECR_REPO }}:latest
