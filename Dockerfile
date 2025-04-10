@@ -21,3 +21,5 @@ COPY --from=build /app/build /app
 EXPOSE 3000
 
 CMD ["serve", "-s", "."]
+
+#Test
