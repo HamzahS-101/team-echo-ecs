@@ -1,14 +1,15 @@
-name: Terraform Deployment
+name: Terraform Plan
 
 on:
   workflow_dispatch:
+  push:
 
 env:
   AWS_REGION: eu-west-2
 
 jobs:
-  terraform:
-    name: Terraform Lint, Scan, Plan and Apply
+  terraform-plan:
+    name: Terraform Lint, Scan, Plan
     runs-on: ubuntu-latest
 
     steps:
@@ -21,6 +22,10 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download .tfvars file from S3
+        run: |
+          aws s3 cp s3://threat-composer-project/terraform.tfvars
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -46,11 +51,14 @@ jobs:
         run: terraform init
         working-directory: ./terraform
 
-      - name: Terraform Plan
-        id: plan
-        run: terraform plan -input=false
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
         working-directory: ./terraform
 
-      - name: Terraform Apply
-        if: steps.plan.outcome == 'success'
-        run: terraform apply -auto-approve
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: ./terraform
+
+      - name: Terraform Plan
+        run: terraform plan
+        working-directory: ./terraform
