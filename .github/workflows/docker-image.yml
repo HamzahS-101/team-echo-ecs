@@ -2,7 +2,7 @@ name: AWS ECR/ECS Deployment
 
 on:
   workflow_dispatch:
-    
+
 env:
   AWS_REGION: eu-west-2
   ECR_REPO: "repo" # Update this once we have ECR Repo

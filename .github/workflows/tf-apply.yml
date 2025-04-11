@@ -1,7 +1,10 @@
 name: Terraform Apply
 
 on:
-  workflow_dispatch:
+    workflow_run:
+      workflows: ["Terraform Plan"]
+      types:
+        - completed
   
 env:
   AWS_REGION: eu-west-2
@@ -9,6 +12,7 @@ env:
 jobs:
   terraform-apply:
     name: Terraform Apply
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -24,10 +28,13 @@ jobs:
 
       - name: Download .tfvars file from S3
         run: |
-          aws s3 cp s3://threat-composer-project/terraform.tfvars
+          aws s3 cp s3://threat-composer-project/terraform.tfvars ./terraform/
+
+      - name: Verify .tfvars file exists
+        run: test -f ./terraform/terraform.tfvars
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
         run: terraform init
