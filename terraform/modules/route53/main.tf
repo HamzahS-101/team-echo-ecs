@@ -1,3 +1,8 @@
+provider "aws" {
+  alias  = "acm_provider"
+  region = "us-east-1"
+}
+
 resource "aws_route53_zone" "hosted_zone" {
   count         = var.create_zone ? 1 : 0
   name          = var.domain_name
@@ -12,32 +17,61 @@ resource "aws_route53_zone" "hosted_zone" {
   )
 }
 
-resource "aws_route53_record" "record" {
-  for_each = { for r in var.records : "${r.name}_${r.type}" => r }
+resource "aws_acm_certificate" "cert" {
+  count                     = var.create_acm_certificate ? 1 : 0
+  domain_name               = var.acm_domain_name
+  validation_method         = "DNS"
+  subject_alternative_names = var.acm_san_list
+  provider                  = aws.acm_provider
 
-  zone_id = var.create_zone ? aws_route53_zone.hosted_zone[0].zone_id : var.zone_id
-  name    = each.value.name != "" ? "${each.value.name}.${var.domain_name}" : var.domain_name
-  type    = each.value.type
-  ttl     = try(each.value.ttl, var.default_ttl)
-  records = try(each.value.records, [])
-
-  dynamic "alias" {
-    for_each = each.value.alias != null ? [each.value.alias] : []
-    content {
-      name                   = alias.value.name
-      zone_id                = alias.value.zone_id
-      evaluate_target_health = try(alias.value.evaluate_target_health, false)
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.acm_domain_name} SSL Certificate"
     }
+  )
+
+  lifecycle {
+    create_before_destroy = true
   }
 }
 
-resource "aws_route53_health_check" "this" {
-  count = var.create_health_check ? 1 : 0
+resource "aws_route53_record" "cert_validation" {
+  for_each = var.create_acm_certificate ? {
+    for dvo in aws_acm_certificate.cert[0].domain_validation_options :
+    dvo.domain_name => {
+      name  = dvo.resource_record_name
+      type  = dvo.resource_record_type
+      value = dvo.resource_record_value
+    }
+  } : {}
 
-  fqdn              = var.health_check_fqdn
-  port              = var.health_check_port
-  type              = var.health_check_type
-  resource_path     = var.health_check_resource_path
-  failure_threshold = var.health_check_failure_threshold
-  request_interval  = var.health_check_request_interval
+  zone_id = var.create_zone ? aws_route53_zone.hosted_zone[0].zone_id : var.zone_id
+  name    = each.value.name
+  type    = each.value.type
+  ttl     = 300
+  records = [each.value.value]
+}
+
+resource "aws_acm_certificate_validation" "cert" {
+  count                   = var.create_acm_certificate ? 1 : 0
+  certificate_arn         = aws_acm_certificate.cert[0].arn
+  validation_record_fqdns = [for r in aws_route53_record.cert_validation : r.fqdn]
+  provider                = aws.acm_provider
+}
+
+resource "aws_route53_record" "alias_records" {
+  for_each = {
+    for record in var.alias_records : "${record.name}_${record.alias.name}" => record
+  }
+
+  zone_id = var.create_zone ? aws_route53_zone.hosted_zone[0].zone_id : var.zone_id
+  name    = each.value.name
+  type    = "A"
+
+  alias {
+    name                   = each.value.alias.name
+    zone_id                = each.value.alias.zone_id
+    evaluate_target_health = try(each.value.alias.evaluate_target_health, false)
+  }
 }

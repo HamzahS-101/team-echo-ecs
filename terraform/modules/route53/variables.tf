@@ -1,22 +1,16 @@
-variable "region" {
-  description = "AWS region"
-  type        = string
-  default     = "us-east-1"
-}
-
 variable "create_zone" {
-  description = "Whether to create a Route 53 hosted zone"
+  description = "Whether to create the Route 53 hosted zone"
   type        = bool
   default     = true
 }
 
 variable "domain_name" {
-  description = "The domain name for the Route 53 hosted zone"
+  description = "The domain name to manage (e.g., echo.hamzahsahal.com)"
   type        = string
 }
 
 variable "zone_id" {
-  description = "ID of an existing Route 53 hosted zone to use when create_zone is false"
+  description = "If not creating a zone, provide an existing hosted zone ID"
   type        = string
   default     = ""
 }
@@ -28,77 +22,44 @@ variable "zone_comment" {
 }
 
 variable "force_destroy" {
-  description = "Set to true to destroy all records in the zone when destroying the zone"
+  description = "Force destroy all records in the zone upon deletion"
   type        = bool
   default     = false
 }
 
-variable "records" {
-  description = "List of DNS records to create"
-  type = list(object({
-    name    = string
-    type    = string
-    ttl     = optional(number)
-    records = optional(list(string))
-    alias = optional(object({
-      name                   = string
-      zone_id                = string
-      evaluate_target_health = optional(bool)
-    }))
-  }))
-  default = []
-}
-
-variable "default_ttl" {
-  description = "Default TTL for DNS records when not specified"
-  type        = number
-  default     = 300
-}
-
-variable "create_health_check" {
-  description = "Whether to create a Route 53 health check"
+variable "create_acm_certificate" {
+  description = "Whether to request an ACM certificate"
   type        = bool
   default     = false
 }
 
-variable "health_check_fqdn" {
-  description = "FQDN for the Route 53 health check"
+variable "acm_domain_name" {
+  description = "Primary domain for the ACM certificate (e.g., app.echo.hamzahsahal.com)"
   type        = string
   default     = ""
 }
 
-variable "health_check_port" {
-  description = "Port to use for the health check"
-  type        = number
-  default     = 80
+variable "acm_san_list" {
+  description = "Optional Subject Alternative Names (SANs) for the ACM certificate"
+  type        = list(string)
+  default     = []
 }
 
-variable "health_check_type" {
-  description = "Type of health check (e.g., HTTP, HTTPS, TCP)"
-  type        = string
-  default     = "HTTP"
-}
-
-variable "health_check_resource_path" {
-  description = "Path to ping on the health check (e.g., /health)"
-  type        = string
-  default     = "/"
-}
-
-variable "health_check_failure_threshold" {
-  description = "Number of consecutive health check failures required before considering unhealthy"
-  type        = number
-  default     = 3
-}
-
-variable "health_check_request_interval" {
-  description = "Time between health checks in seconds"
-  type        = number
-  default     = 30
+variable "alias_records" {
+  description = "Optional alias records (e.g., for ALBs or CloudFront)"
+  type = list(object({
+    name  = string
+    alias = object({
+      name                   = string
+      zone_id                = string
+      evaluate_target_health = optional(bool)
+    })
+  }))
+  default = []
 }
 
 variable "tags" {
-  description = "Tags to apply to all resources"
+  description = "Map of tags to apply to all resources"
   type        = map(string)
   default     = {}
 }
