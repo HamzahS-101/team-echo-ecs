@@ -21,3 +21,15 @@ variable "private_subnet_cidrs" {
   type        = list(string)
   default     = ["10.0.1.0/24", "10.0.3.0/24"]
 }
+
+variable "aws_region" {
+  description = "AWS region for the VPC and endpoints"
+  type        = string
+  default     = "eu-west-2"
+}
+
+variable "ecs_task_sg_id" {
+  description = "Security group ID for ECS tasks (used in VPC endpoint SG)"
+  type        = string
+}
+
