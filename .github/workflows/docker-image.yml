@@ -2,6 +2,13 @@ name: AWS ECR/ECS Deployment
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - Dockerfile
+      - app/**
+
 
 env:
   AWS_REGION: eu-west-2
