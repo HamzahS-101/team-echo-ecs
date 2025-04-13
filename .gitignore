@@ -35,3 +35,12 @@ override.tf.json
 # Ignore CLI configuration files
 .terraformrc
 terraform.rc
+
+#add .terraform.lock.hcl
+# Ignore the .terraform.lock.hcl file, which is used to lock provider versions
+# and is not needed in version control.
+.terraform.lock.hcl
+
+ ../.DS_Store
+
+ .DS_Store

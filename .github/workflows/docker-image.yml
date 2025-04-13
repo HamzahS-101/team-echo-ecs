@@ -34,7 +34,7 @@ jobs:
         with:
           image-ref: ${{ env.ECR_REPO }}:latest
           severity: 'CRITICAL,HIGH'
-          format: 'sarif'
+          format: 'table'
           exit-code: 1 
 
       - name: Push Docker Image to ECR
