@@ -1,19 +1,15 @@
-output "ecs_cluster_id" {
-  description = "ID of the ECS Cluster."
+output "cluster_id" {
   value       = aws_ecs_cluster.cluster.id
+  description = "ID of the ECS cluster."
 }
 
-output "ecs_service_id" {
-  description = "ID of the ECS Service."
-  value       = aws_ecs_service.service.id
-}
-
-output "task_execution_role_arn" {
-  description = "ARN of the IAM role used for ECS task execution."
-  value       = aws_iam_role.task_execution_role.arn
-}
-
-output "ecs_task_definition_arn" {
-  description = "ARN of the ECS Task Definition."
+output "task_definition_arn" {
   value       = aws_ecs_task_definition.task_definition.arn
+  description = "ARN of the ECS task definition."
 }
+
+output "service_name" {
+  value       = aws_ecs_service.service.name
+  description = "Name of the ECS service."
+}
+

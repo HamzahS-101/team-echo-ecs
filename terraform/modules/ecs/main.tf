@@ -8,50 +8,27 @@ resource "aws_ecs_cluster" "cluster" {
 }
 
 resource "aws_iam_role" "task_execution_role" {
-  name = var.iam_role_name
+  name = "ecsTaskExecutionRole"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
       {
-        Action = "sts:AssumeRole",
         Effect = "Allow",
         Principal = {
           Service = "ecs-tasks.amazonaws.com"
-        }
+        },
+        Action = "sts:AssumeRole"
       }
     ]
   })
 }
 
-resource "aws_iam_policy" "task_execution_policy" {
-  name        = var.iam_policy_name
-  description = "Policy for ECS task execution role"
-
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Action = [
-          "ecr:GetAuthorizationToken",
-          "ecr:BatchCheckLayerAvailability",
-          "ecr:GetDownloadUrlForLayer",
-          "ecr:BatchGetImage",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents",
-          "logs:CreateLogGroup"
-        ],
-        Effect   = "Allow",
-        Resource = "*"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "task_execution_attachment" {
+resource "aws_iam_role_policy_attachment" "attach_managed_policy" {
   role       = aws_iam_role.task_execution_role.name
-  policy_arn = aws_iam_policy.task_execution_policy.arn
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
+
 
 resource "aws_ecs_task_definition" "task_definition" {
   family                   = var.task_definition_family
@@ -61,23 +38,17 @@ resource "aws_ecs_task_definition" "task_definition" {
   memory                   = var.task_memory
   execution_role_arn       = aws_iam_role.task_execution_role.arn
 
-  runtime_platform {
-    operating_system_family = "LINUX"
-    cpu_architecture        = "X86_64"
-  }
-
   container_definitions = jsonencode([
     {
-      name      = var.container_name,
-      image     = var.docker_image,
-      cpu       = var.container_cpu,
-      memory    = var.container_memory,
-      essential = true,
+      name      = var.container_name
+      image     = var.docker_image
+      cpu       = var.container_cpu
+      memory    = var.container_memory
+      essential = true
       portMappings = [
         {
-          containerPort = var.container_port,
-          hostPort      = var.container_port,
-          protocol      = "tcp"
+          containerPort = var.container_port
+          hostPort      = var.container_port
         }
       ]
     }
@@ -85,16 +56,16 @@ resource "aws_ecs_task_definition" "task_definition" {
 }
 
 resource "aws_ecs_service" "service" {
-  name             = var.service_name
-  launch_type      = "FARGATE"
-  platform_version = "LATEST"
-  cluster          = aws_ecs_cluster.cluster.id
-  task_definition  = aws_ecs_task_definition.task_definition.arn
-  desired_count    = var.desired_count
+  name            = var.service_name
+  cluster         = aws_ecs_cluster.cluster.id
+  launch_type     = "FARGATE"
+  desired_count   = var.desired_count
+  task_definition = aws_ecs_task_definition.task_definition.arn
 
   network_configuration {
-    subnets         = var.private_subnet_ids
-    security_groups = [var.container_security_group_id]
+    subnets          = var.private_subnet_ids
+    security_groups  = [var.ecs_tasks_sg_id]
+    assign_public_ip = false
   }
 
   load_balancer {
@@ -102,9 +73,5 @@ resource "aws_ecs_service" "service" {
     container_name   = var.container_name
     container_port   = var.container_port
   }
-
-  depends_on = [
-    aws_ecs_task_definition.task_definition,
-    aws_ecs_cluster.cluster
-  ]
 }
+

@@ -1,35 +1,29 @@
 variable "vpc_cidr" {
-  description = "CIDR block for the VPC"
   type        = string
-  default     = "10.0.0.0/16"
-}
-
-variable "azs" {
-  description = "List of Availability Zones"
-  type        = list(string)
-  default     = ["eu-west-2a", "eu-west-2b"]
+  description = "The CIDR block for the entire VPC (e.g., 10.0.0.0/16)."
 }
 
 variable "public_subnet_cidrs" {
-  description = "List of CIDR blocks for public subnets"
   type        = list(string)
-  default     = ["10.0.0.0/24", "10.0.2.0/24"]
+  description = "List of CIDR blocks for the public subnets in each Availability Zone."
 }
 
 variable "private_subnet_cidrs" {
-  description = "List of CIDR blocks for private subnets"
   type        = list(string)
-  default     = ["10.0.1.0/24", "10.0.3.0/24"]
+  description = "List of CIDR blocks for the private subnets in each Availability Zone."
+}
+
+variable "azs" {
+  type        = list(string)
+  description = "List of AWS Availability Zones to distribute resources across."
 }
 
 variable "aws_region" {
-  description = "AWS region for the VPC and endpoints"
   type        = string
-  default     = "eu-west-2"
+  description = "The AWS region where resources will be created."
 }
 
 variable "ecs_task_sg_id" {
-  description = "Security group ID for ECS tasks (used in VPC endpoint SG)"
-  type        = string
+  type = string
+  description = "ID of the ECS tasks security group (used by ECS and referenced by VPC endpoints)."
 }
-

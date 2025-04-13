@@ -3,6 +3,10 @@ resource "aws_lb" "alb" {
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
   subnets            = var.alb_subnet_ids
+
+  tags = {
+    Name = "alb"
+  }
 }
 
 resource "aws_lb_target_group" "target_group" {
@@ -11,6 +15,10 @@ resource "aws_lb_target_group" "target_group" {
   protocol    = var.target_group_protocol
   target_type = "ip"
   vpc_id      = var.vpc_id
+
+  tags = {
+    Name = "alb-target-group"
+  }
 }
 
 resource "aws_lb_listener" "http_listener" {
@@ -20,7 +28,6 @@ resource "aws_lb_listener" "http_listener" {
 
   default_action {
     type = "redirect"
-
     redirect {
       port        = "443"
       protocol    = "HTTPS"
@@ -41,9 +48,7 @@ resource "aws_lb_listener" "https_listener" {
     target_group_arn = aws_lb_target_group.target_group.arn
   }
 
-  depends_on = [
-    aws_lb_target_group.target_group
-  ]
+  depends_on = [aws_lb_target_group.target_group]
 }
 
 resource "aws_security_group" "alb_sg" {
@@ -71,17 +76,21 @@ resource "aws_security_group" "alb_sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = {
+    Name = "alb-sg"
+  }
 }
 
-resource "aws_security_group" "target_group_sg" {
-  name        = var.target_security_group_name
-  description = "Security group for Target Group"
+resource "aws_security_group" "ecs_tasks" {
+  name        = var.ecs_tasks_sg_name
+  description = var.ecs_tasks_sg_description
   vpc_id      = var.vpc_id
 
   ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
+    from_port       = var.ecs_tasks_ingress_port
+    to_port         = var.ecs_tasks_ingress_port
+    protocol        = "tcp"
     security_groups = [aws_security_group.alb_sg.id]
   }
 
@@ -90,5 +99,9 @@ resource "aws_security_group" "target_group_sg" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "ecs-tasks-sg"
   }
 }
