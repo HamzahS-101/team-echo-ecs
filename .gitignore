@@ -41,6 +41,6 @@ terraform.rc
 # and is not needed in version control.
 .terraform.lock.hcl
 
- ../.DS_Store
 
- .DS_Store
+
+ .**/.DS_Store
