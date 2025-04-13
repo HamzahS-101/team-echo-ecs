@@ -5,7 +5,6 @@ on:
 
 env:
   AWS_REGION: eu-west-2
-  ECR_REPO: "repo" # Update this once we have ECR Repo
 
 jobs:
   deploy-app:
@@ -27,16 +26,16 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t ${{ env.ECR_REPO }}:latest -f Dockerfile app/
+          docker build -t ${{ secrets.ECR_REPO }}:latest -f Dockerfile app/
 
       - name: Scan Docker Image with Trivy
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.ECR_REPO }}:latest
+          image-ref: ${{ secrets.ECR_REPO }}:latest
           severity: 'CRITICAL,HIGH'
           format: 'table'
           exit-code: 1 
 
       - name: Push Docker Image to ECR
         run: |
-          docker push ${{ env.ECR_REPO }}:latest
+          docker push ${{ secrets.ECR_REPO }}:latest
