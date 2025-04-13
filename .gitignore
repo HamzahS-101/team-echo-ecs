@@ -40,3 +40,7 @@ terraform.rc
 # Ignore the .terraform.lock.hcl file, which is used to lock provider versions
 # and is not needed in version control.
 .terraform.lock.hcl
+
+ ../.DS_Store
+
+ .DS_Store
