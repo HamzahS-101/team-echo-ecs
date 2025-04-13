@@ -32,7 +32,7 @@ jobs:
       - name: Verify terraform.tfvars exists
         run: test -f terraform.tfvars
 
-      - name: List directory contents (debug)
+      - name: List directory contents 
         run: ls -l
 
       - name: Setup Terraform

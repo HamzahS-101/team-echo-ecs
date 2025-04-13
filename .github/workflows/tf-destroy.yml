@@ -1,32 +1,49 @@
 name: Terraform Destroy
+
 on:
   workflow_dispatch:
+
+env:
+  AWS_REGION: eu-west-2
+
+defaults:
+  run:
+    working-directory: ./terraform/
 
 jobs:
   destroy:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_version: 1.5.7
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.7
 
-    - uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: eu-west-2
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-    - name: Init Terraform
-      run: terraform init -backend-config="region=eu-west-2"
+      - name: Download terraform.tfvars from S3
+        run: aws s3 cp s3://team-echo-ecs/terraform.tfvars ./
 
-    - name: Plan Destroy
-      run: terraform plan -destroy -out=tfplan
+      - name: Verify terraform.tfvars exists
+        run: test -f terraform.tfvars
 
-    - name: Show Plan
-      run: terraform show tfplan
+      - name: List directory contents
+        run: ls -l
 
-    - name: Apply Destroy Plan
-      run: terraform apply -auto-approve tfplan
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Plan Destroy
+        run: terraform plan -destroy -var-file="terraform.tfvars" -input=false -out=tfplan
+
+      - name: Apply Destroy Plan
+        run: terraform apply -auto-approve tfplan
