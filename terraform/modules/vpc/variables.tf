@@ -24,6 +24,6 @@ variable "aws_region" {
 }
 
 variable "ecs_task_sg_id" {
-  type = string
+  type        = string
   description = "ID of the ECS tasks security group (used by ECS and referenced by VPC endpoints)."
 }
